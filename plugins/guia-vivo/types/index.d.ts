@@ -14,6 +14,10 @@ export type Especificacao = {
   feitas: number
   total: number
   proxima: string | null
+  /** especificacao.md diz "Situação: aprovada". */
+  aprovada: boolean
+  /** registro-construcao.md diz "Situação: em andamento" (/construir rodando). */
+  emConstrucao: boolean
 }
 
 declare module 'claude-code' {

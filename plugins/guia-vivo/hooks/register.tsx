@@ -17,7 +17,7 @@ const checklist = atom({ plugin: 'guia-vivo', key: 'checklist' } as const, null,
   shape: 'checklist-1',
 })
 const especificacao = atom({ plugin: 'guia-vivo', key: 'especificacao' } as const, null, {
-  shape: 'especificacao-1',
+  shape: 'especificacao-2',
 })
 const arquivos = atom({ plugin: 'guia-vivo', key: 'arquivosEditados' } as const, [], {
   shape: 'arquivos-1',
@@ -95,7 +95,7 @@ const TAMANHOS: InfoTamanho[] = [
     proximo: {
       explorar: 'Concepção: rode /especificar. O Claude faz perguntas e escreve os requisitos com você.',
       planejar: 'Valide a especificação: responda às perguntas, confirme o que está [assumido] e aprove o plano e as tarefas.',
-      implementar: 'Construção em ciclos curtos: "Faça a próxima tarefa de tarefas.md e marque como concluída".',
+      implementar: 'Construção em ciclos curtos: "Faça a próxima tarefa de tarefas.md" (acompanhando) ou /construir (autônomo, para sozinho ao terminar ou travar).',
       verificar: 'Confira os critérios de aceite da especificação para as tarefas feitas.',
       salvar: 'Rode /code-review e faça o commit. Ainda há tarefas? Volte para Implementar.',
     },
@@ -212,7 +212,16 @@ async function lerEspecificacao($: EngineInterface): Promise<Especificacao | nul
     else if (proxima === null) proxima = (m[2] ?? '').trim().slice(0, 90)
   }
 
-  return { pasta: melhor.pasta, feitas, total, proxima }
+  const lerSeExiste = async (arquivo: string) => {
+    const caminho = `${raiz}/${melhor!.pasta}/${arquivo}`
+    return (await $.fs.exists(caminho)) ? await $.fs.read(caminho) : ''
+  }
+  const aprovada = /Situa[çc][ãa]o:\s*aprovada/i.test(await lerSeExiste('especificacao.md'))
+  const emConstrucao = /Situa[çc][ãa]o:\s*em andamento/i.test(
+    await lerSeExiste('registro-construcao.md'),
+  )
+
+  return { pasta: melhor.pasta, feitas, total, proxima, aprovada, emConstrucao }
 }
 
 async function atualizarProjeto($: EngineInterface) {
@@ -225,11 +234,17 @@ async function atualizarProjeto($: EngineInterface) {
     novaSpec = null
   }
   await update($, especificacao, () => novaSpec)
+  await mostrarStatus($)
 }
 
 async function mostrarStatus($: EngineInterface) {
   const atual = await read($, etapa)
   const t = infoTamanho(await read($, tamanho))
+  const spec = await read($, especificacao)
+  if (spec?.emConstrucao) {
+    $.ui.status(`Guia: construção autônoma ${spec.feitas}/${spec.total} · /guia`)
+    return
+  }
   const n = ETAPAS.findIndex(e => e.id === atual) + 1
   const sufixo = t ? ` · ${t.nome}` : ''
   $.ui.status(`Guia: ${n}/5 ${nomeDaEtapa(atual)}${sufixo} · /guia`)
@@ -326,6 +341,12 @@ async function calcularDicas($: EngineInterface): Promise<Dica[]> {
     lista.push({
       id: 'cresceu-grande',
       texto: `A tarefa já mexeu em ${nArquivos} arquivos. Se ainda há muito pela frente, considere Grande e uma especificação (/especificar).`,
+    })
+  }
+  if (spec && spec.aprovada && !spec.emConstrucao && spec.feitas < spec.total) {
+    lista.push({
+      id: 'pode-construir',
+      texto: `A especificação ${spec.pasta} está aprovada e tem ${spec.total - spec.feitas} tarefas pendentes. Quer acompanhar uma por vez, ou rodar /construir para o modo autônomo (até 10 tarefas por rodada)?`,
     })
   }
   if (t === 'grande' && spec === null && atual !== 'explorar') {
@@ -620,8 +641,14 @@ export const register: Register = on => {
         {spec !== null && (
           <Box flexDirection="column">
             <Text bold>Especificação: {spec.pasta}</Text>
+            {spec.emConstrucao && (
+              <Text color="claude" bold>
+                🔨 Construção autônoma em andamento
+              </Text>
+            )}
             <Text color={spec.total > 0 && spec.feitas === spec.total ? 'success' : undefined}>
               {spec.feitas}/{spec.total} tarefas concluídas
+              {spec.aprovada ? ' · aprovada' : ' · ainda não aprovada'}
             </Text>
             {spec.proxima !== null && <Text dimColor>Próxima: {spec.proxima}</Text>}
           </Box>

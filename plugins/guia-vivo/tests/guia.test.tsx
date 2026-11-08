@@ -110,6 +110,28 @@ test('o painel mostra o progresso da especificação', async ($, on) => {
   await ui.unmount()
 })
 
+test('especificação aprovada sugere /construir, e a construção autônoma aparece no painel', async ($, on) => {
+  const pasta = '/proj/specs/002-cadastro'
+  const arquivos: Record<string, string> = {
+    ...BASICO,
+    [`${pasta}/tarefas.md`]: '- [x] T1\n- [ ] T2 Validar CPF\n',
+    [`${pasta}/especificacao.md`]: '# Especificação\n> Situação: aprovada\n',
+  }
+  motor(on, arquivos)
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+  let ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /rodar \/construir/ })).toBeDefined()
+  await ui.unmount()
+
+  arquivos[`${pasta}/registro-construcao.md`] = '# Registro\nSituação: em andamento\n'
+  // O orquestrador escreve o registro: o guia relê a especificação.
+  await $.tool.call({ tool: 'Write', file_path: `${pasta}/registro-construcao.md`, content: '' })
+  ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /Construção autônoma em andamento/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /rodar \/construir/ })).toBeUndefined()
+  await ui.unmount()
+})
+
 test('acesso ao .env é bloqueado, gera alerta, e "Entendi" dispensa a dica', async ($, on) => {
   motor(on, BASICO)
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })

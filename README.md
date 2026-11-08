@@ -11,6 +11,7 @@ Um ponto de partida para qualquer projeto no Claude Code, já com as boas práti
 | `.claude/settings.json` | Ativa o Guia vivo e define o que o Claude pode fazer sem perguntar. Também impede o Claude de ler o `.env` (uma segunda proteção, além do bloqueio do Guia vivo). |
 | `PLAN.md` e `PROGRESS.md` | Modelos para tarefas médias: o plano com critérios de aceite e o registro do que já foi feito. |
 | `.claude/skills/especificar/` e `specs/` | O comando `/especificar`, para tarefas grandes, e a pasta onde ficam as especificações. |
+| `.claude/skills/construir/` e `.claude/agents/` | O comando `/construir` (construção autônoma) e a equipe de agentes que ele usa: construtor, revisor e explorador. |
 | `plugins/guia-vivo/` | O próprio Guia vivo. Não precisa mexer. |
 
 ---
@@ -42,6 +43,35 @@ Nem toda tarefa precisa do mesmo cuidado. No começo de cada tarefa, escolha o t
 **Na dúvida, escolha Média.** Se a tarefa crescer, o Guia vivo avisa e sugere subir de nível.
 
 **De onde vem isso:** a especificação segue duas metodologias de mercado, o *Spec-Driven Development* (escrever o quê e por quê antes do código) e o *AI-DLC* da AWS (concepção validada pelas pessoas, depois construção em ciclos curtos). Mesmo nas tarefas pequenas e médias aproveitamos o principal delas: dizer antes como saber que ficou pronto e separar o que foi **confirmado** do que é só **suposição**.
+
+### Tarefas grandes: construir acompanhando ou no modo autônomo
+
+Depois que você aprova a especificação, há dois jeitos de construir:
+
+- **Acompanhando:** o Claude faz uma tarefa por vez na conversa e você vê cada passo.
+- **Autônomo (`/construir`):** uma equipe de agentes faz as tarefas em sequência, sem pedir confirmação a cada passo, e para sozinha no fim.
+
+**Como funciona a equipe:**
+
+| Quem | Modelo | O que faz |
+|---|---|---|
+| Orquestrador (a conversa principal) | O modelo da sua sessão (recomendado: Opus) | Pega a próxima tarefa, delega, decide e resolve quando algo trava |
+| Construtor | Sonnet | Faz a tarefa |
+| Revisor | Sonnet | Confere a tarefa contra os critérios de aceite, sem ter escrito o código |
+| Explorador | Haiku | Faz buscas rápidas no projeto |
+
+**Proteções:**
+- Só começa se a especificação estiver **aprovada**.
+- Trabalha numa **cópia separada** do projeto (a branch `construcao/...`). Nada vai para a versão principal sem você revisar.
+- Faz **no máximo 10 tarefas por rodada**, para controlar o custo. Para continuar, rode `/construir` de novo.
+- **Para e chama você** quando: termina; uma tarefa falha mesmo após correções; aparece uma dúvida na especificação; precisa de senha, acesso ou instalação nova.
+- Cada tarefa aprovada vira um registro separado (commit), e tudo fica anotado em `specs/<pasta>/registro-construcao.md`.
+- Nunca envia nada ao GitHub (`push`) e nunca mexe no `.env`.
+
+**Antes de usar:**
+- O modo autônomo **consome bastante** do seu plano, porque cada tarefa usa pelo menos dois agentes.
+- Para rodar sem interrupções, o Claude Code precisa ter permissão para editar arquivos e rodar os testes sem perguntar. Se ele parar pedindo permissão, aprove ou ajuste o modo de permissões.
+- No final, **revise o resultado** (por exemplo com `/code-review`) antes de juntar à versão principal. A autonomia poupa o acompanhamento passo a passo, não a revisão.
 
 ---
 
@@ -117,6 +147,7 @@ claude plugin list
 | `/guia` | Abre o painel e mostra o próximo passo recomendado |
 | `/guia pequena` · `/guia media` · `/guia grande` | Define o tamanho da tarefa atual (veja a seção 2) |
 | `/especificar` | Inicia a especificação de uma tarefa grande (só nos projetos criados a partir deste modelo) |
+| `/construir` | Constrói no modo autônomo as tarefas de uma especificação aprovada, até 10 por rodada (só nos projetos criados a partir deste modelo) |
 | `/clear` | Limpa a conversa para começar outra tarefa. O Guia vivo recomeça do passo 1. |
 | `/compact` | Resume a conversa quando ela fica longa, sem perder o fio |
 

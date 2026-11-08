@@ -23,7 +23,7 @@ No início de cada tarefa, se a pessoa (ou o Guia vivo) ainda não disse o taman
 |---|---|---|
 | **Pequena** | Ajuste ou correção em 1 ou 2 arquivos | Confirme a intenção e o critério de pronto em uma frase, faça e mostre a evidência. |
 | **Média** | Vários arquivos ou algumas decisões, cabe em uma conversa | Plano em `PLAN.md` com critérios de aceite e etapas pequenas; progresso em `PROGRESS.md`. |
-| **Grande** | Funcionalidade ou sistema novo, várias conversas ou pessoas | Skill `/especificar`: especificação validada, plano e tarefas em `specs/`. Nada de código antes da aprovação. |
+| **Grande** | Funcionalidade ou sistema novo, várias conversas ou pessoas | Skill `/especificar`: especificação validada, plano e tarefas em `specs/`. Nada de código antes da aprovação. Depois, construção acompanhada ou autônoma (`/construir`). |
 
 Em qualquer tamanho:
 - Separe o que é **[confirmado]** pela pessoa do que é **[assumido]** por você, e peça para confirmar as suposições.

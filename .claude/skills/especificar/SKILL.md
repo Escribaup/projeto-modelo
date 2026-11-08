@@ -34,8 +34,11 @@ Só depois de a especificação ser aprovada:
 
 1. **`plano.md`** (de `modelos/plano.md`): como construir, as decisões técnicas com o motivo, o que pode dar errado e como cada requisito será verificado. Se o projeto já tem um padrão, siga-o.
 2. **`tarefas.md`** (de `modelos/tarefas.md`): tarefas pequenas, cada uma com caixa `- [ ]`, ligada a um requisito (R1, R2…) e com como verificar. Agrupe em **ciclos curtos** (os "bolts" do AI-DLC), de algumas horas cada.
-3. Mostre o plano e as tarefas e peça aprovação.
-4. **Execute uma tarefa por vez:** implemente, verifique (rode os testes ou mostre o resultado), marque `- [x]` e só então passe para a próxima. Se algo da especificação se mostrar errado, pare e proponha a correção na especificação antes de continuar.
+3. Mostre o plano e as tarefas e peça aprovação. Quando a pessoa aprovar, mude a linha de situação da especificação para `Situação: aprovada` e a Prontidão para `pronta`.
+4. Pergunte como a pessoa quer construir:
+   - **Acompanhando**: você executa uma tarefa por vez nesta conversa (passo 5).
+   - **Autônomo**: a pessoa roda `/construir`, que faz as tarefas em sequência com subagentes e para sozinho ao terminar, travar ou atingir o limite da rodada.
+5. **Execute uma tarefa por vez:** implemente, verifique (rode os testes ou mostre o resultado), marque `- [x]` e só então passe para a próxima. Se algo da especificação se mostrar errado, pare e proponha a correção na especificação antes de continuar.
 
 ## Regras
 
