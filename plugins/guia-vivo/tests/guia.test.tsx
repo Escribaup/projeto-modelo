@@ -9,56 +9,109 @@ const PAINEL = {
     isFocused: false,
     bodyColumns: 50,
     placement: 'dock',
-    scroll: { offset: 0, bodyRows: 40 },
+    scroll: { offset: 0, bodyRows: 60 },
     view: {},
   },
 } as const
 
-function motor(on: Parameters<Parameters<typeof test>[1]>[1], arquivos: string[]) {
+type On = Parameters<Parameters<typeof test>[1]>[1]
+
+/** Um "motor" de mentira: arquivos é um mapa caminho -> conteúdo. */
+function motor(on: On, arquivos: Record<string, string>, notas: string[] = []) {
   on('command.register', () => ({ value: { command: 'guia' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('ui.status', () => ({ value: undefined }))
   on('ui.toast', () => ({ value: undefined }))
   on('session.cwd', () => ({ value: '/proj' }))
-  on('fs.exists', (_, e) => ({ value: arquivos.includes(e.path) }))
-  on('fs.read', () => ({ value: '.env\nnode_modules\n' }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 100, percent: 10 }, rateLimits: [] } }))
+  on('fs.exists', (_, e) => ({ value: Object.keys(arquivos).some(p => p === e.path || p.startsWith(`${e.path}/`)) }))
+  on('fs.read', (_, e) => ({ value: arquivos[e.path] ?? '.env\n' }))
+  on('fs.stat', () => ({ value: { kind: 'file', size: 1, mtimeMs: 1, isLink: false } }))
+  on('fs.list', (_, e) => {
+    const nomes = new Set<string>()
+    for (const p of Object.keys(arquivos)) {
+      if (p.startsWith(`${e.path}/`)) nomes.add(p.slice(e.path.length + 1).split('/')[0]!)
+    }
+    return { value: [...nomes].map(name => ({ name, kind: 'dir', size: 0, mtimeMs: 0, isLink: false })) }
+  })
+  on('session.append', (_, e, next) => {
+    const bloco = e.message.content[0] as { text?: string } | undefined
+    notas.push(bloco?.text ?? '')
+    return next(e)
+  })
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('tool.call', () => ({ result: {} }))
+  on('turn.complete', () => ({}))
 }
 
-test('projeto sem CLAUDE.md mostra a dica do /init, em toda superfície', async ($, on) => {
-  motor(on, ['/proj/.git'])
+const BASICO = { '/proj/.git': '', '/proj/CLAUDE.md': '#', '/proj/.gitignore': '.env\n' }
+
+test('sem CLAUDE.md mostra a dica do /init e pede o tamanho, em toda superfície', async ($, on) => {
+  motor(on, { '/proj/.git': '' })
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
 
   for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
     const ui = await $.ui.mount({ ...PAINEL, surface })
     expect(await ui.find({ type: 'Text', text: /Rode \/init/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /▶ 1\. Explorar/ })).toBeDefined()
+    expect(await ui.find({ key: 'tam-pequena' })).toBeDefined()
     await ui.unmount()
   }
 })
 
-test('editar arquivos leva à etapa Implementar e, depois de 5, pede verificação', async ($, on) => {
-  motor(on, ['/proj/.git', '/proj/CLAUDE.md'])
+test('o botão de tamanho avisa o Claude e muda o próximo passo', async ($, on) => {
+  const notas: string[] = []
+  motor(on, BASICO, notas)
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
 
-  for (let i = 0; i < 5; i++) {
+  const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  await ui.press({ key: 'tam-pequena' })
+  expect(notas[0]).toContain('PEQUENA')
+  expect(await ui.find({ type: 'Text', text: /critério de pronto/ })).toBeDefined()
+  expect(await ui.find({ key: 'trocar-media' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('/guia grande devolve a instrução para o Claude', async ($, on) => {
+  motor(on, BASICO)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: true })
+  const r = (await $.command.run({ command: 'guia', args: 'Grande' })) as {
+    text?: string
+    context?: readonly string[]
+  }
+  expect(r.text).toContain('Tarefa grande')
+  expect(r.context?.[0]).toContain('GRANDE')
+})
+
+test('tarefa pequena que cresce sugere mudar para média', async ($, on) => {
+  motor(on, BASICO)
+  await $.session.start({ cwd: '/proj', surface: 'terminal', isInteractive: true })
+  await $.command.run({ command: 'guia', args: 'pequena' })
+  for (let i = 0; i < 4; i++) {
     await $.tool.call({ tool: 'Edit', file_path: `/proj/a${i}.ts`, old_string: 'a', new_string: 'b' })
   }
-
   const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /mudar para Média/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /▶ 3\. Implementar/ })).toBeDefined()
-  expect(await ui.find({ type: 'Text', text: /Me mostre que funciona/ })).toBeDefined()
   await ui.unmount()
+})
 
-  await $.tool.call({ tool: 'Bash', command: 'npm test' })
-  const ui2 = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
-  expect(await ui2.find({ type: 'Text', text: /▶ 4\. Verificar/ })).toBeDefined()
-  await ui2.unmount()
+test('o painel mostra o progresso da especificação', async ($, on) => {
+  motor(on, {
+    ...BASICO,
+    '/proj/specs/_modelo/tarefas.md': '- [ ] modelo',
+    '/proj/specs/001-relatorio/tarefas.md':
+      '# Tarefas\n- [x] Criar tabela\n- [ ] Gerar PDF\n- [ ] Enviar por e-mail\n',
+  })
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /1\/3 tarefas concluídas/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Próxima: Gerar PDF/ })).toBeDefined()
+  await ui.unmount()
 })
 
 test('acesso ao .env é bloqueado, gera alerta, e "Entendi" dispensa a dica', async ($, on) => {
-  motor(on, ['/proj/.git', '/proj/CLAUDE.md'])
+  motor(on, BASICO)
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
   const leitura = (await $.tool.call({ tool: 'Read', file_path: '/proj/.env' })) as { deny?: string }
   expect(leitura.deny).toContain('Bloqueado pelo Guia vivo')
@@ -71,7 +124,7 @@ test('acesso ao .env é bloqueado, gera alerta, e "Entendi" dispensa a dica', as
 })
 
 test('a guarda pega .env em comandos e caminhos, mas libera os modelos', async ($, on) => {
-  motor(on, ['/proj/.git', '/proj/CLAUDE.md'])
+  motor(on, BASICO)
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
 
   const bloqueados = [

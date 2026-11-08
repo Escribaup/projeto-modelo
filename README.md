@@ -9,7 +9,8 @@ Um ponto de partida para qualquer projeto no Claude Code, já com as boas práti
 | `CLAUDE.md` | O "manual de boas-vindas" que o Claude lê toda vez que você abre o projeto. Já traz o método de trabalho e as regras da IDVL. Falta só preencher a seção **Sobre este projeto**. |
 | `.gitignore` | Impede que o arquivo `.env`, onde ficam senhas e chaves, seja enviado ao GitHub. |
 | `.claude/settings.json` | Ativa o Guia vivo e define o que o Claude pode fazer sem perguntar. Também impede o Claude de ler o `.env` (uma segunda proteção, além do bloqueio do Guia vivo). |
-| `PLAN.md` e `PROGRESS.md` | Modelos para tarefas grandes: o plano em etapas e o registro do que já foi feito. |
+| `PLAN.md` e `PROGRESS.md` | Modelos para tarefas médias: o plano com critérios de aceite e o registro do que já foi feito. |
+| `.claude/skills/especificar/` e `specs/` | O comando `/especificar`, para tarefas grandes, e a pasta onde ficam as especificações. |
 | `plugins/guia-vivo/` | O próprio Guia vivo. Não precisa mexer. |
 
 ---
@@ -21,14 +22,30 @@ Você faz isso uma vez para cada projeto novo.
 1. Abra a página **github.com/Escribaup/projeto-modelo** no navegador.
 2. Clique no botão verde **Use this template** e depois em **Create a new repository**.
 3. Dê um nome ao projeto (por exemplo, `relatorio-clientes`), escolha **Private** e clique em **Create repository**.
-4. Abra o projeto novo no Claude Code, pelo ambiente que você usa (veja a seção 2).
+4. Abra o projeto novo no Claude Code, pelo ambiente que você usa (veja a seção 3).
 5. Na primeira conversa, peça: *"Leia o CLAUDE.md e me ajude a preencher a seção Sobre este projeto"*.
 
-> Não está vendo o botão **Use this template**? Peça para o responsável pelo repositório ativá-lo (veja a seção 4).
+> Não está vendo o botão **Use this template**? Peça para o responsável pelo repositório ativá-lo (veja a seção 5).
 
 ---
 
-## 2. Usar o Guia vivo em cada ambiente
+## 2. Escolher o tamanho da tarefa
+
+Nem toda tarefa precisa do mesmo cuidado. No começo de cada tarefa, escolha o tamanho. Você pode clicar no painel do Guia vivo ou digitar o comando. O Claude ajusta o jeito de trabalhar à sua escolha.
+
+| Tamanho | Quando usar | O que acontece | Comando |
+|---|---|---|---|
+| **Pequena** | Um ajuste ou correção que dá para explicar em uma frase | Você diz o que quer e como saber que ficou certo. O Claude faz e mostra a prova. | `/guia pequena` |
+| **Média** | Mexe em vários arquivos, mas cabe em uma conversa | O Claude monta um plano curto (`PLAN.md`) com etapas e critérios de aceite. Você aprova antes. | `/guia media` |
+| **Grande** | Uma funcionalidade ou sistema novo, que vai levar várias conversas | O Claude conduz uma **especificação** com você (`/especificar`): faz perguntas, escreve os requisitos e só constrói depois da sua aprovação. | `/guia grande` |
+
+**Na dúvida, escolha Média.** Se a tarefa crescer, o Guia vivo avisa e sugere subir de nível.
+
+**De onde vem isso:** a especificação segue duas metodologias de mercado, o *Spec-Driven Development* (escrever o quê e por quê antes do código) e o *AI-DLC* da AWS (concepção validada pelas pessoas, depois construção em ciclos curtos). Mesmo nas tarefas pequenas e médias aproveitamos o principal delas: dizer antes como saber que ficou pronto e separar o que foi **confirmado** do que é só **suposição**.
+
+---
+
+## 3. Usar o Guia vivo em cada ambiente
 
 O Guia vivo é um painel ao lado da conversa. Ele mostra em que passo você está, o próximo passo recomendado e dicas no momento certo. Ele também **bloqueia** qualquer tentativa do Claude de ler ou alterar o arquivo `.env`, onde ficam senhas e chaves, e avisa você no painel. Para abrir, digite **`/guia`** na caixa de mensagem.
 
@@ -78,7 +95,7 @@ Se o repositório `projeto-modelo` for privado, o seu computador precisa estar c
 
 ---
 
-## 3. Primeiros passos no dia a dia
+## 4. Primeiros passos no dia a dia
 
 - **Uma tarefa, uma conversa.** Terminou um assunto? Digite `/clear` antes de começar o próximo.
 - **Plano antes de mexer.** Em tarefas grandes, aperte `Shift+Tab` para o modo plano, ou peça "monte o plano antes".
@@ -89,7 +106,7 @@ O Guia vivo lembra você de tudo isso na hora certa.
 
 ---
 
-## 4. Para o responsável pelo repositório
+## 5. Para o responsável pelo repositório
 
 - **Ativar o modelo:** no GitHub, abra **Settings → General** deste repositório e marque **Template repository**. Isso faz o botão **Use this template** aparecer.
 - **Atualizar o Guia vivo:** as mudanças ficam em `plugins/guia-vivo/`. Quem já instalou recebe a nova versão com `claude plugin update guia-vivo` (no terminal) ou `/plugin` → atualizar.
