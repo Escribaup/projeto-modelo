@@ -1,0 +1,14 @@
+{
+  "name": "projeto-modelo",
+  "description": "Mods e configurações de boas práticas para iniciar projetos no Claude Code.",
+  "owner": {
+    "name": "Escribaup"
+  },
+  "plugins": [
+    {
+      "name": "guia-vivo",
+      "source": "./plugins/guia-vivo",
+      "description": "Guia vivo de boas práticas do Claude Code: painel com o método dos 5 passos, checklist do projeto e dicas no momento certo."
+    }
+  ]
+}
