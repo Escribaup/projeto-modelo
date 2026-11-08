@@ -8,7 +8,7 @@ Um ponto de partida para qualquer projeto no Claude Code, já com as boas práti
 |---|---|
 | `CLAUDE.md` | O "manual de boas-vindas" que o Claude lê toda vez que você abre o projeto. Já traz o método de trabalho e as regras da IDVL. Falta só preencher a seção **Sobre este projeto**. |
 | `.gitignore` | Impede que o arquivo `.env`, onde ficam senhas e chaves, seja enviado ao GitHub. |
-| `.claude/settings.json` | Ativa o Guia vivo e define o que o Claude pode fazer sem perguntar. Também o impede de ler o `.env`. |
+| `.claude/settings.json` | Ativa o Guia vivo e define o que o Claude pode fazer sem perguntar. Também impede o Claude de ler o `.env` (uma segunda proteção, além do bloqueio do Guia vivo). |
 | `PLAN.md` e `PROGRESS.md` | Modelos para tarefas grandes: o plano em etapas e o registro do que já foi feito. |
 | `plugins/guia-vivo/` | O próprio Guia vivo. Não precisa mexer. |
 
@@ -30,7 +30,7 @@ Você faz isso uma vez para cada projeto novo.
 
 ## 2. Usar o Guia vivo em cada ambiente
 
-O Guia vivo é um painel ao lado da conversa. Ele mostra em que passo você está, o próximo passo recomendado e dicas no momento certo. Para abrir, digite **`/guia`** na caixa de mensagem.
+O Guia vivo é um painel ao lado da conversa. Ele mostra em que passo você está, o próximo passo recomendado e dicas no momento certo. Ele também **bloqueia** qualquer tentativa do Claude de ler ou alterar o arquivo `.env`, onde ficam senhas e chaves, e avisa você no painel. Para abrir, digite **`/guia`** na caixa de mensagem.
 
 Escolha abaixo o ambiente que você usa.
 

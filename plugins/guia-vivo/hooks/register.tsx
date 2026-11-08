@@ -68,7 +68,29 @@ type Dica = { id: string; texto: string; urgente?: boolean }
 const LEITURA = new Set(['Read', 'Grep', 'Glob', 'LS'])
 const EDICAO = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 const PLANO = new Set(['EnterPlanMode', 'ExitPlanMode'])
-const ENV = /(^|[\/\s'"])\.env(\.[\w-]+)?($|[\s'"])/
+// Um nome de arquivo .env (ou .env.qualquer-coisa) em um caminho ou comando.
+const ENV_NOME = /(?:^|[\/\\\s'"=<>:(])\.env(\.[\w.-]+)?(?=$|[\s'"\/\\;|&)<>,])/g
+// Modelos sem senha, que podem ser lidos e editados.
+const ENV_MODELO = /^\.(example|exemplo|sample|template|modelo|dist)(\.|$)/i
+
+const MOTIVO_ENV =
+  'Bloqueado pelo Guia vivo: arquivos .env guardam senhas e chaves e não devem ser lidos nem alterados pelo Claude. Se precisar de uma credencial, peça para a pessoa configurá-la. Arquivos de modelo como .env.example são permitidos.'
+
+function citaEnv(texto: string): boolean {
+  for (const achado of texto.matchAll(ENV_NOME)) {
+    const sufixo = achado[1]
+    if (sufixo === undefined || !ENV_MODELO.test(sufixo)) return true
+  }
+  return false
+}
+
+function tentaUsarEnv(entrada: Record<string, unknown>): boolean {
+  for (const campo of ['file_path', 'notebook_path', 'path', 'command']) {
+    const valor = entrada[campo]
+    if (typeof valor === 'string' && citaEnv(valor)) return true
+  }
+  return false
+}
 const VERIFICA =
   /\b(test|tests|pytest|jest|vitest|mocha|playwright|tsc|lint|eslint|ruff|mypy|build|check)\b/
 const COMMIT = /\bgit\s+(commit|push)\b/
@@ -131,7 +153,7 @@ async function calcularDicas($: EngineInterface): Promise<Dica[]> {
       id: 'env-tocado',
       urgente: true,
       texto:
-        'Um arquivo .env (senhas e chaves) foi acessado. Confira se era necessário e mantenha-o fora do git.',
+        'O Claude tentou acessar um arquivo .env (senhas e chaves) e o Guia vivo bloqueou. Se a tarefa precisa de uma credencial, configure você mesmo.',
     })
   }
   if (check && !check.envProtegido) {
@@ -254,20 +276,29 @@ export const register: Register = on => {
     return next(e)
   })
 
+  // Um único gancho para chamadas de ferramenta:
+  // 1. Guarda: recusa qualquer acesso a arquivos .env (senhas e chaves).
+  // 2. Depois que a ferramenta roda, atualiza a etapa do método.
+  // Se algo falhar antes da ferramenta rodar, a chamada é recusada por
+  // segurança; se falhar depois, o resultado da ferramenta é mantido.
   on('tool.call', async ($, e, next) => {
-    const ferramenta = String(e.tool)
     const entrada = e as unknown as Record<string, unknown>
-    const caminho =
-      typeof entrada.file_path === 'string' ? entrada.file_path : ''
-    const comando = typeof entrada.command === 'string' ? entrada.command : ''
 
-    if (ENV.test(caminho) || ENV.test(comando)) {
+    if (tentaUsarEnv(entrada)) {
       if (!(await read($, envTocado))) {
-        $.ui.toast('Guia vivo: um arquivo .env foi acessado. Confira no painel.')
+        $.ui.toast('Guia vivo: acesso a um arquivo .env bloqueado. Veja no painel.')
       }
       await update($, envTocado, () => true)
+      await liberar($, 'env-tocado')
+
+      return { deny: MOTIVO_ENV }
     }
 
+    const resultado = await next(e)
+    if (resultado.deny !== undefined) return resultado
+
+    const ferramenta = String(e.tool)
+    const comando = typeof entrada.command === 'string' ? entrada.command : ''
     const atual = await read($, etapa)
     if (PLANO.has(ferramenta)) {
       await dispensar($, 'plano-visto')
@@ -285,8 +316,12 @@ export const register: Register = on => {
       await irPara($, 'explorar')
     }
 
-    return next(e)
-  }).catch(($, e, next) => next(e))
+    return resultado
+  }).catch(($, e, next) =>
+    next.called
+      ? next(e)
+      : { deny: 'Guia vivo: a verificação de .env falhou; chamada recusada por segurança.' },
+  )
 
   on('turn.complete', async ($, e, next) => {
     await update($, turnos, n => n + 1)

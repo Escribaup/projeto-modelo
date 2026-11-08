@@ -57,14 +57,45 @@ test('editar arquivos leva à etapa Implementar e, depois de 5, pede verificaç�
   await ui2.unmount()
 })
 
-test('acessar o .env gera alerta, e "Entendi" dispensa a dica', async ($, on) => {
+test('acesso ao .env é bloqueado, gera alerta, e "Entendi" dispensa a dica', async ($, on) => {
   motor(on, ['/proj/.git', '/proj/CLAUDE.md'])
   await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
-  await $.tool.call({ tool: 'Read', file_path: '/proj/.env' })
+  const leitura = (await $.tool.call({ tool: 'Read', file_path: '/proj/.env' })) as { deny?: string }
+  expect(leitura.deny).toContain('Bloqueado pelo Guia vivo')
 
   const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
   expect(await ui.find({ type: 'Text', text: /\.env \(senhas e chaves\)/ })).toBeDefined()
   await ui.press({ key: 'ok-env-tocado' })
   expect(await ui.find({ type: 'Text', text: /\.env \(senhas e chaves\)/ })).toBeUndefined()
   await ui.unmount()
+})
+
+test('a guarda pega .env em comandos e caminhos, mas libera os modelos', async ($, on) => {
+  motor(on, ['/proj/.git', '/proj/CLAUDE.md'])
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+
+  const bloqueados = [
+    { tool: 'Bash', command: 'cat .env' },
+    { tool: 'Bash', command: 'source ./.env.local && npm start' },
+    { tool: 'Bash', command: 'grep SENHA config/.env.producao' },
+    { tool: 'Edit', file_path: 'C:\\proj\\.env', old_string: 'a', new_string: 'b' },
+    { tool: 'Write', file_path: '/proj/.env.local', content: 'X=1' },
+    { tool: 'Grep', pattern: 'KEY', path: '/proj/.env' },
+  ] as const
+  for (const chamada of bloqueados) {
+    const r = (await $.tool.call(chamada as never)) as { deny?: string }
+    expect(r.deny).toContain('Bloqueado pelo Guia vivo')
+  }
+
+  const liberados = [
+    { tool: 'Read', file_path: '/proj/.env.example' },
+    { tool: 'Bash', command: 'cp .env.exemplo .env.exemplo.bak' },
+    { tool: 'Bash', command: 'npm run build' },
+    { tool: 'Read', file_path: '/proj/src/environment.ts' },
+    { tool: 'Bash', command: 'python -m venv .venv' },
+  ] as const
+  for (const chamada of liberados) {
+    const r = (await $.tool.call(chamada as never)) as { deny?: string }
+    expect(r.deny).toBeUndefined()
+  }
 })
