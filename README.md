@@ -93,12 +93,39 @@ Na web, você pode pedir ao Claude no começo da conversa: *"Siga o método dos 
 
 Se o repositório `projeto-modelo` for privado, o seu computador precisa estar conectado ao GitHub para baixar o Guia vivo. Se a instalação der erro de acesso, peça ajuda ao suporte de TI para "autenticar o git com o GitHub" (`gh auth login` e depois `gh auth setup-git`). Isso só precisa ser feito uma vez.
 
+### Atualizar o Guia vivo
+
+Quando sair uma versão nova, rode estes dois comandos no terminal, fora do Claude Code. O primeiro baixa a lista atualizada e o segundo instala a versão nova:
+
+```
+claude plugin marketplace update projeto-modelo
+claude plugin update guia-vivo@projeto-modelo
+```
+
+Depois, **feche e abra o Claude Code de novo** (no aplicativo, feche e reabra a conversa) para a versão nova começar a valer.
+
+Para conferir qual versão está instalada:
+
+```
+claude plugin list
+```
+
+### Comandos do dia a dia
+
+| Comando | O que faz |
+|---|---|
+| `/guia` | Abre o painel e mostra o próximo passo recomendado |
+| `/guia pequena` · `/guia media` · `/guia grande` | Define o tamanho da tarefa atual (veja a seção 2) |
+| `/especificar` | Inicia a especificação de uma tarefa grande (só nos projetos criados a partir deste modelo) |
+| `/clear` | Limpa a conversa para começar outra tarefa. O Guia vivo recomeça do passo 1. |
+| `/compact` | Resume a conversa quando ela fica longa, sem perder o fio |
+
 ---
 
 ## 4. Primeiros passos no dia a dia
 
 - **Uma tarefa, uma conversa.** Terminou um assunto? Digite `/clear` antes de começar o próximo.
-- **Plano antes de mexer.** Em tarefas grandes, aperte `Shift+Tab` para o modo plano, ou peça "monte o plano antes".
+- **Plano antes de mexer, do tamanho certo.** Escolha o tamanho da tarefa (`/guia pequena`, `/guia media` ou `/guia grande`) e deixe o Claude combinar o caminho antes de alterar arquivos.
 - **Me mostre que funciona.** Peça sempre a prova de que o resultado está certo.
 - **O que se repete vira skill.** Explicou o mesmo processo duas vezes? Peça para transformá-lo em uma skill.
 
@@ -109,5 +136,5 @@ O Guia vivo lembra você de tudo isso na hora certa.
 ## 5. Para o responsável pelo repositório
 
 - **Ativar o modelo:** no GitHub, abra **Settings → General** deste repositório e marque **Template repository**. Isso faz o botão **Use this template** aparecer.
-- **Atualizar o Guia vivo:** as mudanças ficam em `plugins/guia-vivo/`. Quem já instalou recebe a nova versão com `claude plugin update guia-vivo` (no terminal) ou `/plugin` → atualizar.
+- **Publicar uma versão nova do Guia vivo:** faça as mudanças em `plugins/guia-vivo/` e **aumente o número de `version`** em `plugins/guia-vivo/.claude-plugin/plugin.json` (por exemplo, de `0.3.0` para `0.4.0`). Sem isso, quem já instalou pode não receber a mudança. Depois, avise a equipe para seguir "Atualizar o Guia vivo" (seção 3).
 - **Ajustar as regras:** as regras da IDVL ficam no `CLAUDE.md`. As permissões ficam em `.claude/settings.json`.
