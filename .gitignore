@@ -1,0 +1,24 @@
+# Senhas e chaves: nunca vão para o git
+.env
+.env.*
+!.env.exemplo
+!.env.example
+
+# Configurações pessoais do Claude Code (as do projeto ficam em .claude/settings.json)
+.claude/settings.local.json
+
+# Sistema operacional e editores
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Dependências e arquivos gerados
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+*.log
