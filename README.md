@@ -10,12 +10,11 @@ Um ponto de partida para qualquer projeto no Claude Code, já com as boas práti
 |---|---|
 | `CLAUDE.md` | O "manual de boas-vindas" que o Claude lê toda vez que você abre o projeto: o método de trabalho e as regras da IDVL. Falta só preencher a seção **Sobre este projeto**. |
 | `.gitignore` | A lista do que **nunca** vai para o GitHub: senhas (`.env`), certificados digitais, planilhas, PDFs, extratos e a pasta `dados-locais/`. |
-| `.claude/settings.json` | Ativa o Guia vivo e define o que o Claude pode fazer sem perguntar, o que precisa confirmar e o que é proibido. |
+| `.claude/settings.json` | Ativa o Guia vivo (que vem da [loja de plugins da IDVL](https://github.com/Escribaup/claude-plugins-idvl)) e define o que o Claude pode fazer sem perguntar, o que precisa confirmar e o que é proibido. |
 | `PLAN.md` e `PROGRESS.md` | Modelos para tarefas médias: o plano com critérios de aceite e o registro do que já foi feito. |
 | `specs/` | Onde ficam as especificações das tarefas grandes. |
 | `.claude/skills/` | Os comandos prontos do projeto: `/especificar`, `/construir`, `/concluir-construcao` e `/construir-paralelo`. (Uma *skill* é um procedimento salvo que vira um comando.) |
 | `.claude/agents/` | A equipe de agentes usada pelos comandos: construtor, revisor, explorador e revisor de especificação. |
-| `plugins/guia-vivo/` | O código do Guia vivo. Não precisa mexer. |
 
 ---
 
@@ -127,7 +126,7 @@ O Guia vivo é um painel ao lado da conversa: mostra em que passo você está, o
 
 **Para ter o Guia vivo em todos os projetos (inclusive os que não vieram do modelo):**
 1. Clique no **+** ao lado da caixa de mensagem e depois em **Plugins**.
-2. Clique em **Add marketplace** e digite `Escribaup/projeto-modelo`.
+2. Clique em **Add marketplace** e digite `Escribaup/claude-plugins-idvl`.
 3. Escolha **Guia vivo**, clique em **Add plugin** e escolha **usuário** (vale para todos os seus projetos; as outras opções valem só para um projeto).
 
 > Não encontrou a opção **Add marketplace**? Faça uma vez a instalação pelo terminal (abaixo). Depois disso, o Guia vivo aparece no aplicativo também.
@@ -138,7 +137,7 @@ O Guia vivo é um painel ao lado da conversa: mostra em que passo você está, o
 **Para ter o Guia vivo em todos os projetos**, digite na caixa de mensagem do Claude Code:
 
 ```
-/plugin install guia-vivo --marketplace Escribaup/projeto-modelo
+/plugin install guia-vivo --marketplace Escribaup/claude-plugins-idvl
 ```
 
 Quando ele perguntar se quer adicionar o marketplace, digite `y` e aperte Enter. Depois, escolha **usuário**.
@@ -146,7 +145,7 @@ Quando ele perguntar se quer adicionar o marketplace, digite `y` e aperte Enter.
 Ou, direto no terminal, fora do Claude Code:
 
 ```
-claude plugin install guia-vivo --marketplace Escribaup/projeto-modelo
+claude plugin install guia-vivo --marketplace Escribaup/claude-plugins-idvl
 ```
 
 ### No navegador (claude.ai/code)
@@ -156,13 +155,24 @@ Aqui o Guia vivo **não funciona**: as sessões na web não carregam plugins, en
 Quando sair uma versão nova, rode no terminal, fora do Claude Code:
 
 ```
-claude plugin marketplace update projeto-modelo
-claude plugin update guia-vivo@projeto-modelo
+claude plugin marketplace update plugins-idvl
+claude plugin update guia-vivo@plugins-idvl
 ```
 
 Depois, **feche e abra o Claude Code de novo** para a versão nova valer. Para ver a versão instalada: `claude plugin list`. Se você só usa o aplicativo e não quer usar o terminal, peça ao suporte de TI.
 
-> O repositório `projeto-modelo` é **público**, então não precisa de login no GitHub para instalar ou atualizar o Guia vivo. Os projetos criados a partir dele devem ser **privados** (seção 1).
+### Já tinha instalado pelo endereço antigo?
+Até a versão 0.5.0 o Guia vivo era instalado a partir do `projeto-modelo`. Agora ele mora na **[loja de plugins da IDVL](https://github.com/Escribaup/claude-plugins-idvl)**. Se você instalou antes, faça a troca uma vez, no terminal:
+
+```
+claude plugin uninstall guia-vivo@projeto-modelo
+claude plugin marketplace remove projeto-modelo
+claude plugin install guia-vivo --marketplace Escribaup/claude-plugins-idvl
+```
+
+Depois, feche e abra o Claude Code de novo.
+
+> Os repositórios `projeto-modelo` e `claude-plugins-idvl` são **públicos**, então não precisa de login no GitHub para instalar ou atualizar o Guia vivo. Já os projetos criados a partir do modelo devem ser **privados** (seção 1).
 
 ---
 
@@ -217,6 +227,6 @@ Faz até 3 tarefas **independentes** ao mesmo tempo, cada uma numa cópia separa
 ## 8. Para o responsável pelo repositório
 
 - **Ativar o modelo:** no GitHub, abra **Settings › General** deste repositório e marque **Template repository**. Isso faz o botão **Use this template** aparecer.
-- **Proteger a branch `main`:** em **Settings › Branches**, exija revisão antes de juntar mudanças. Cada mudança no Guia vivo roda no computador de todos os colaboradores que o instalaram.
-- **Publicar uma versão nova do Guia vivo:** faça as mudanças em `plugins/guia-vivo/` e **aumente o número de `version`** em `plugins/guia-vivo/.claude-plugin/plugin.json` (por exemplo, de `0.5.0` para `0.6.0`). Sem isso, quem já instalou pode não receber a mudança. Depois, avise a equipe para seguir "Atualizar o Guia vivo" (seção 4).
+- **Proteger a branch `main`:** em **Settings › Branches**, exija revisão antes de juntar mudanças, aqui e na loja de plugins.
+- **O Guia vivo mora em outro repositório:** [`Escribaup/claude-plugins-idvl`](https://github.com/Escribaup/claude-plugins-idvl). Mudanças e versões novas são feitas lá (veja o README daquele repositório). Este modelo só o ativa, pelo `.claude/settings.json`.
 - **Ajustar as regras:** as regras da IDVL ficam no `CLAUDE.md`. As permissões ficam em `.claude/settings.json`.

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "extraKnownMarketplaces": {
-    "projeto-modelo": {
-      "source": { "source": "github", "repo": "Escribaup/projeto-modelo" }
+    "plugins-idvl": {
+      "source": { "source": "github", "repo": "Escribaup/claude-plugins-idvl" }
     }
   },
   "enabledPlugins": {
-    "guia-vivo@projeto-modelo": true
+    "guia-vivo@plugins-idvl": true
   },
   "permissions": {
     "allow": [
