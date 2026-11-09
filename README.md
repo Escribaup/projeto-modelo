@@ -43,7 +43,7 @@ Você faz isso uma vez para cada projeto novo.
    - Marque **Private** e clique em **Create repository**.
 4. **Leve o projeto para o lugar onde você vai trabalhar:**
    - **No computador (aplicativo ou terminal):** no GitHub Desktop, use **File › Clone repository**, escolha o projeto novo e uma pasta (por exemplo, Documentos). Sem o GitHub Desktop, abra o Claude Code em qualquer pasta e peça: *"Clone o repositório github.com/Escribaup/relatorio-clientes na pasta Documentos"*.
-   - **No navegador (claude.ai/code):** ao iniciar a sessão, escolha o repositório na lista.
+   - **No navegador (claude.ai/code) ou no app do celular:** ao iniciar a sessão, escolha o repositório na lista.
 5. Abra a pasta do projeto no Claude Code (veja a seção 4). Na primeira conversa, peça: *"Leia o CLAUDE.md e me ajude a preencher a seção Sobre este projeto"*.
 
 > Não está vendo o botão **Use this template**? Peça para o responsável ativá-lo (seção 8).
@@ -64,7 +64,7 @@ Você faz isso uma vez para cada projeto novo.
 | **Grande** | Uma funcionalidade ou sistema novo, que vai levar várias conversas | O Claude conduz uma **especificação** com você e só constrói depois da sua aprovação (seção 3). | `/guia grande` |
 
 **Na dúvida, escolha Média.** Se a tarefa crescer, o Guia vivo avisa e sugere subir de nível.
-**No navegador** (onde o Guia vivo não funciona), diga no começo da conversa: *"Esta tarefa é média"*.
+**No navegador ou no app do celular** (onde o Guia vivo não funciona), diga no começo da conversa: *"Esta tarefa é média"*.
 
 **Verificar sem testes automáticos.** Em planilhas, relatórios e automações, "verificar" é conferir o resultado contra uma referência: totais batendo com uma planilha conhecida, a automação rodada em modo de teste com dados fictícios, um checklist conferido item a item. O Claude mostra a evidência.
 
@@ -148,8 +148,8 @@ Ou, direto no terminal, fora do Claude Code:
 claude plugin install guia-vivo --marketplace Escribaup/claude-plugins-idvl
 ```
 
-### No navegador (claude.ai/code)
-Aqui o Guia vivo **não funciona**: as sessões na web não carregam plugins, então nem o painel nem os comandos `/guia` existem. O resto do modelo funciona: o `CLAUDE.md`, os comandos `/especificar`, `/construir` e `/concluir-construcao`, e as proteções do `.gitignore` e do `settings.json`. Diga o tamanho da tarefa no começo da conversa (*"Esta tarefa é média"*).
+### No navegador (claude.ai/code) e no app do celular
+Aqui o Guia vivo **não funciona**: essas sessões rodam na nuvem e não carregam plugins, então nem o painel nem os comandos `/guia` existem. Se você digitar `/plugin`, vai aparecer "/plugin isn't available in this environment": instale o Guia vivo pelo computador (terminal ou aplicativo). O resto do modelo funciona: o `CLAUDE.md`, os comandos `/especificar`, `/construir` e `/concluir-construcao`, e as proteções do `.gitignore` e do `settings.json`. Diga o tamanho da tarefa no começo da conversa (*"Esta tarefa é média"*).
 
 ### Atualizar o Guia vivo
 Quando sair uma versão nova, rode no terminal, fora do Claude Code:
