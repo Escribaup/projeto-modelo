@@ -14,10 +14,10 @@ const tamanho = atom({ plugin: 'guia-vivo', key: 'tamanho' } as const, null, {
   shape: 'tamanho-1',
 })
 const checklist = atom({ plugin: 'guia-vivo', key: 'checklist' } as const, null, {
-  shape: 'checklist-1',
+  shape: 'checklist-2',
 })
 const especificacao = atom({ plugin: 'guia-vivo', key: 'especificacao' } as const, null, {
-  shape: 'especificacao-2',
+  shape: 'especificacao-3',
 })
 const arquivos = atom({ plugin: 'guia-vivo', key: 'arquivosEditados' } as const, [], {
   shape: 'arquivos-1',
@@ -115,35 +115,81 @@ type Dica = { id: string; texto: string; urgente?: boolean }
 const LEITURA = new Set(['Read', 'Grep', 'Glob', 'LS'])
 const EDICAO = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit'])
 const PLANO = new Set(['EnterPlanMode', 'ExitPlanMode'])
-const VERIFICA =
-  /\b(test|tests|pytest|jest|vitest|mocha|playwright|tsc|lint|eslint|ruff|mypy|build|check)\b/
+// Comandos que contam como verificação (testes, checagem de tipos, lint).
+const VERIFICA = new RegExp(
+  [
+    String.raw`\b(npm|pnpm|yarn|bun)\s+(run\s+)?(test|lint|check|build|typecheck)\b`,
+    String.raw`\b(pytest|jest|vitest|mocha|tsc|eslint|ruff|mypy)\b`,
+    String.raw`\bpython3?\s+-m\s+(unittest|pytest)\b`,
+    String.raw`\bplaywright\s+test\b`,
+    String.raw`\b(go|cargo|dotnet|mvn|gradle|deno)\s+test\b`,
+    String.raw`\bmake\s+(test|check)\b`,
+  ].join('|'),
+)
 const COMMIT = /\bgit\s+(commit|push)\b/
 
-// Um nome de arquivo .env (ou .env.qualquer-coisa) em um caminho ou comando.
-const ENV_NOME = /(?:^|[\/\\\s'"=<>:(])\.env(\.[\w.-]+)?(?=$|[\s'"\/\\;|&)<>,])/g
-// Modelos sem senha, que podem ser lidos e editados.
-const ENV_MODELO = /^\.(example|exemplo|sample|template|modelo|dist)(\.|$)/i
+// Arquivos de segredo: .env (e variações), certificados digitais e chaves.
+// O grupo 1 captura o sufixo de um .env (ex.: ".local" em ".env.local").
+const SEGREDO =
+  /(?:^|[\/\\\s'"=<>:(])(?:\.env(\.[\w.-]+)?|[\w.-]+\.(?:pfx|p12|key)|(?:credentials|service[-_]account)[\w.-]*\.json|id_(?:rsa|ed25519))(?=$|[\s'"\/\\;|&)<>,])/gi
+// Modelos sem senha, que podem ser lidos e editados (em qualquer posição do sufixo).
+const MODELO = /^(example|exemplo|sample|template|modelo|dist)$/i
 
-const MOTIVO_ENV =
-  'Bloqueado pelo Guia vivo: arquivos .env guardam senhas e chaves e não devem ser lidos nem alterados pelo Claude. Se precisar de uma credencial, peça para a pessoa configurá-la. Arquivos de modelo como .env.example são permitidos.'
+const MOTIVO_SEGREDO =
+  'Bloqueado pelo Guia vivo: este arquivo guarda senhas, chaves ou certificado digital e não deve ser lido nem alterado pelo Claude. Se precisar de uma credencial, peça para a pessoa configurá-la. Arquivos de modelo como .env.example são permitidos.'
 
 // ---------------------------------------------------------------------------
 // Funções de apoio
 // ---------------------------------------------------------------------------
 
-function citaEnv(texto: string): boolean {
-  for (const achado of texto.matchAll(ENV_NOME)) {
+function citaSegredo(texto: string): boolean {
+  for (const achado of texto.matchAll(SEGREDO)) {
     const sufixo = achado[1]
-    if (sufixo === undefined || !ENV_MODELO.test(sufixo)) return true
+    const ehModelo =
+      sufixo !== undefined && sufixo.split('.').some(parte => MODELO.test(parte))
+    if (!ehModelo) return true
   }
   return false
 }
 
-function tentaUsarEnv(entrada: Record<string, unknown>): boolean {
-  for (const campo of ['file_path', 'notebook_path', 'path', 'command']) {
+/**
+ * Tira de um comando o que não é acesso a arquivo: corpo de heredoc, mensagem
+ * de commit, e trechos que só mexem no nome do arquivo (proteger no .gitignore,
+ * tirar do git). Assim o guarda não bloqueia justamente a correção.
+ */
+function limparComando(comando: string): string {
+  // Corpo de heredoc (<<EOF ... EOF): é texto, não leitura de arquivo.
+  let texto = comando.replace(
+    /<<-?\s*(['"]?)(\w+)\1([^\n]*)\n[\s\S]*?\n\s*\2\s*(?=\n|$)/g,
+    (_m, _q, _fim, resto: string) => `<<HEREDOC${resto}`,
+  )
+  const partes = texto.split(/(&&|\|\||;|\n)/)
+  texto = partes
+    .map(parte => {
+      // Mensagem de commit ou tag: o texto entre aspas é só descrição.
+      if (/^\s*git\s+(commit|tag)\b/.test(parte)) {
+        return parte.replace(/(["'])(?:\\.|(?!\1)[\s\S])*\1/g, '""')
+      }
+      // Só mexem no nome, sem ler o conteúdo.
+      if (/^\s*git\s+(rm\s+(-r\s+)?--cached|check-ignore|ls-files|status)\b/.test(parte)) {
+        return ''
+      }
+      // Escrever o nome no .gitignore (echo/printf ... >> .gitignore).
+      if (/^\s*(echo|printf)\b[^>]*>>?\s*\.gitignore\s*$/.test(parte)) return ''
+      return parte
+    })
+    .join(' ')
+
+  return texto
+}
+
+function tentaUsarSegredo(entrada: Record<string, unknown>): boolean {
+  for (const campo of ['file_path', 'notebook_path', 'path']) {
     const valor = entrada[campo]
-    if (typeof valor === 'string' && citaEnv(valor)) return true
+    if (typeof valor === 'string' && citaSegredo(valor)) return true
   }
+  const comando = entrada.command
+  if (typeof comando === 'string' && citaSegredo(limparComando(comando))) return true
   return false
 }
 
@@ -173,6 +219,19 @@ async function lerChecklist($: EngineInterface): Promise<Checklist> {
     (await $.fs.exists(`${cwd}/CLAUDE.md`)) ||
     (await $.fs.exists(`${cwd}/.claude/CLAUDE.md`))
   const temGit = await $.fs.exists(`${cwd}/.git`)
+  // "Sobre este projeto" preenchido: a linha "- Objetivo:" tem texto depois.
+  let sobrePreenchido = true
+  try {
+    const caminho = (await $.fs.exists(`${cwd}/CLAUDE.md`))
+      ? `${cwd}/CLAUDE.md`
+      : `${cwd}/.claude/CLAUDE.md`
+    const texto = await $.fs.read(caminho)
+    if (/^##\s*Sobre este projeto/im.test(texto)) {
+      sobrePreenchido = !/^\s*-\s*Objetivo:\s*$/im.test(texto)
+    }
+  } catch {
+    sobrePreenchido = true
+  }
   let envProtegido = false
   try {
     const gitignore = await $.fs.read(`${cwd}/.gitignore`)
@@ -181,7 +240,7 @@ async function lerChecklist($: EngineInterface): Promise<Checklist> {
     envProtegido = false
   }
 
-  return { temClaudeMd, envProtegido, temGit }
+  return { temClaudeMd, sobrePreenchido: temClaudeMd && sobrePreenchido, envProtegido, temGit }
 }
 
 /** Acha a especificação mais recente (specs/<pasta>/tarefas.md) e conta as tarefas. */
@@ -221,7 +280,16 @@ async function lerEspecificacao($: EngineInterface): Promise<Especificacao | nul
     await lerSeExiste('registro-construcao.md'),
   )
 
-  return { pasta: melhor.pasta, feitas, total, proxima, aprovada, emConstrucao }
+  // Está numa branch de construção ainda não juntada à principal?
+  let naBranchConstrucao = false
+  try {
+    const head = await $.fs.read(`${cwd}/.git/HEAD`)
+    naBranchConstrucao = /ref:\s*refs\/heads\/construcao\//.test(head)
+  } catch {
+    naBranchConstrucao = false
+  }
+
+  return { pasta: melhor.pasta, feitas, total, proxima, aprovada, emConstrucao, naBranchConstrucao }
 }
 
 async function atualizarProjeto($: EngineInterface) {
@@ -309,7 +377,7 @@ async function calcularDicas($: EngineInterface): Promise<Dica[]> {
       id: 'env-tocado',
       urgente: true,
       texto:
-        'O Claude tentou acessar um arquivo .env (senhas e chaves) e o Guia vivo bloqueou. Se a tarefa precisa de uma credencial, configure você mesmo.',
+        'O Claude tentou acessar um arquivo de senhas, chaves ou certificado (como o .env) e o Guia vivo bloqueou. Se a tarefa precisa de uma credencial, configure você mesmo.',
     })
   }
   if (check && !check.envProtegido) {
@@ -343,6 +411,18 @@ async function calcularDicas($: EngineInterface): Promise<Dica[]> {
       texto: `A tarefa já mexeu em ${nArquivos} arquivos. Se ainda há muito pela frente, considere Grande e uma especificação (/especificar).`,
     })
   }
+  if (
+    spec &&
+    spec.naBranchConstrucao &&
+    !spec.emConstrucao &&
+    spec.total > 0 &&
+    spec.feitas === spec.total
+  ) {
+    lista.push({
+      id: 'concluir',
+      texto: `Todas as tarefas de ${spec.pasta} estão prontas. Rode /concluir-construcao para revisar, juntar à versão principal e enviar ao GitHub.`,
+    })
+  }
   if (spec && spec.aprovada && !spec.emConstrucao && spec.feitas < spec.total) {
     lista.push({
       id: 'pode-construir',
@@ -358,13 +438,20 @@ async function calcularDicas($: EngineInterface): Promise<Dica[]> {
   if (nEdicoes >= 5) {
     lista.push({
       id: 'verificar',
-      texto: `${nEdicoes} alterações sem nenhum teste ou conferência. Peça: "Me mostre que funciona".`,
+      texto: `${nEdicoes} alterações sem nenhum teste ou conferência. Peça: "Me mostre que funciona". Sem testes automáticos (planilha, relatório, automação)? Confira o resultado contra uma referência e clique em Entendi.`,
     })
   }
   if (t === null && atual === 'implementar' && nEdicoes >= 3 && !fora.has('plano-visto')) {
     lista.push({
       id: 'modo-plano',
       texto: 'O Claude já está alterando arquivos sem um tamanho definido. Escolha o tamanho acima para o guia ajustar o caminho.',
+    })
+  }
+  if (check && check.temClaudeMd && !check.sobrePreenchido) {
+    lista.push({
+      id: 'sobre-vazio',
+      texto:
+        'A seção "Sobre este projeto" do CLAUDE.md está vazia. Peça: "Leia o projeto e me ajude a preencher a seção Sobre este projeto do CLAUDE.md".',
     })
   }
   if (check && !check.temClaudeMd) {
@@ -478,14 +565,14 @@ export const register: Register = on => {
   on('tool.call', async ($, e, next) => {
     const entrada = e as unknown as Record<string, unknown>
 
-    if (tentaUsarEnv(entrada)) {
+    if (tentaUsarSegredo(entrada)) {
       if (!(await read($, envTocado))) {
-        $.ui.toast('Guia vivo: acesso a um arquivo .env bloqueado. Veja no painel.')
+        $.ui.toast('Guia vivo: acesso a um arquivo de senhas ou certificado bloqueado. Veja no painel.')
       }
       await update($, envTocado, () => true)
       await liberar($, 'env-tocado')
 
-      return { deny: MOTIVO_ENV }
+      return { deny: MOTIVO_SEGREDO }
     }
 
     const resultado = await next(e)
@@ -535,7 +622,7 @@ export const register: Register = on => {
   }).catch(($, e, next) =>
     next.called
       ? next(e)
-      : { deny: 'Guia vivo: a verificação de .env falhou; chamada recusada por segurança.' },
+      : { deny: 'Guia vivo: a verificação de arquivos de senha falhou; chamada recusada por segurança.' },
   )
 
   on('turn.complete', async ($, e, next) => {
@@ -646,6 +733,12 @@ export const register: Register = on => {
                 🔨 Construção autônoma em andamento
               </Text>
             )}
+            {spec.emConstrucao && (
+              <Text dimColor>
+                Se a construção parou no meio (erro, Esc, conversa encerrada), rode /construir de
+                novo: ele retoma de onde parou.
+              </Text>
+            )}
             <Text color={spec.total > 0 && spec.feitas === spec.total ? 'success' : undefined}>
               {spec.feitas}/{spec.total} tarefas concluídas
               {spec.aprovada ? ' · aprovada' : ' · ainda não aprovada'}
@@ -663,6 +756,11 @@ export const register: Register = on => {
               <Text color={check.temClaudeMd ? 'success' : 'warning'}>
                 {marca(check.temClaudeMd)} CLAUDE.md
               </Text>
+              {check.temClaudeMd && (
+                <Text color={check.sobrePreenchido ? 'success' : 'warning'}>
+                  {marca(check.sobrePreenchido)} "Sobre este projeto" preenchido
+                </Text>
+              )}
               <Text color={check.envProtegido ? 'success' : 'warning'}>
                 {marca(check.envProtegido)} .env protegido no .gitignore
               </Text>

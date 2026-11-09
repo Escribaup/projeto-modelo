@@ -4,6 +4,8 @@ export type Tamanho = 'pequena' | 'media' | 'grande'
 
 export type Checklist = {
   temClaudeMd: boolean
+  /** A seção "Sobre este projeto" do CLAUDE.md tem o Objetivo preenchido. */
+  sobrePreenchido: boolean
   envProtegido: boolean
   temGit: boolean
 }
@@ -18,6 +20,8 @@ export type Especificacao = {
   aprovada: boolean
   /** registro-construcao.md diz "Situação: em andamento" (/construir rodando). */
   emConstrucao: boolean
+  /** A branch atual é construcao/... (resultado ainda não juntado à principal). */
+  naBranchConstrucao: boolean
 }
 
 declare module 'claude-code' {

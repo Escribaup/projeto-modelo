@@ -34,13 +34,18 @@ Só depois de a especificação ser aprovada:
 
 1. **`plano.md`** (de `modelos/plano.md`): como construir, as decisões técnicas com o motivo, o que pode dar errado e como cada requisito será verificado. Se o projeto já tem um padrão, siga-o.
 2. **`tarefas.md`** (de `modelos/tarefas.md`): tarefas pequenas, cada uma com caixa `- [ ]`, ligada a um requisito (R1, R2…) e com como verificar. Agrupe em **ciclos curtos** (os "bolts" do AI-DLC), de algumas horas cada.
-   - Marque com `[paralela]` as tarefas que podem ser feitas **ao mesmo tempo** que as vizinhas marcadas: não dependem uma da outra e não alteram os mesmos arquivos. Coloque-as seguidas. **Na dúvida, não marque.** Só o `/construir-paralelo` usa essa marca; o `/construir` a ignora.
-3. Mostre o plano e as tarefas e peça aprovação. Quando a pessoa aprovar, mude a linha de situação da especificação para `Situação: aprovada` e a Prontidão para `pronta`.
-4. Pergunte como a pessoa quer construir:
-   - **Acompanhando**: você executa uma tarefa por vez nesta conversa (passo 5).
-   - **Autônomo**: a pessoa roda `/construir`, que faz as tarefas em sequência com subagentes e para sozinho ao terminar, travar ou atingir o limite da rodada.
-   - **Autônomo em paralelo**: a pessoa roda `/construir-paralelo`, que faz ao mesmo tempo as tarefas marcadas `[paralela]` (mais rápido, consome o plano mais depressa).
-5. **Execute uma tarefa por vez:** implemente, verifique (rode os testes ou mostre o resultado), marque `- [x]` e só então passe para a próxima. Se algo da especificação se mostrar errado, pare e proponha a correção na especificação antes de continuar.
+   - Cada tarefa tem um "Verificar:" **objetivo**: um teste, um comando ou uma conferência contra uma referência (por exemplo, "o total bate com a planilha de referência"). Evite "ver se ficou bom".
+   - Só marque `[paralela]` se a pessoa disse que vai usar o `/construir-paralelo` (recurso avançado): tarefas que podem ser feitas ao mesmo tempo que as vizinhas marcadas, sem depender uma da outra e sem alterar os mesmos arquivos. Na dúvida, não marque.
+3. **Revisão de olhos frescos** (recomendada em tarefas grandes; pergunte se a pessoa quer, avisando que consome mais da assinatura). Revisores que **não conhecem esta conversa** leem a especificação e o plano, como um colega recém-chegado:
+   - **Se o plugin Elephant-Goldfish (EGM) estiver instalado** (existem os agentes `egm:egm-zoom-out`, `egm:egm-comprehension`, `egm:egm-design` e `egm:egm-implementation-readiness`): chame os quatro **ao mesmo tempo**, cada um com `Mode: REVIEW`, os caminhos absolutos de `especificacao.md` e `plano.md`, o público ("colaboradores de um escritório de contabilidade, muitos não técnicos") e o pedido de responder **em português do Brasil**, com gravidade, local e sugestão em cada achado.
+   - **Se não estiver**, chame o agente `revisor-especificacao`, que faz os mesmos quatro olhares (escopo, clareza, decisões, prontidão para construir).
+   - Junte os achados em `specs/<pasta>/revisao.md` (sem duplicatas, do mais grave ao mais leve) e apresente um resumo curto. A pessoa escolhe o que corrigir; corrija na especificação ou no plano e, se algo grave mudou, ofereça revisar de novo. Achados não corrigidos ficam registrados como riscos conhecidos.
+4. Mostre o plano e as tarefas (e o resultado da revisão, se houve) e peça aprovação. Quando a pessoa aprovar, mude a linha de situação da especificação para `Situação: aprovada` e a Prontidão para `pronta`.
+5. Pergunte como a pessoa quer construir:
+   - **Acompanhando**: você executa uma tarefa por vez nesta conversa (passo 6). Melhor quando a verificação depende do olho humano.
+   - **Autônomo**: a pessoa roda `/construir`, que faz as tarefas em sequência com subagentes e para sozinho ao terminar, travar ou atingir o limite da rodada. No fim, `/concluir-construcao` junta o resultado à versão principal.
+   - Mencione o `/construir-paralelo` só se a pessoa perguntar por algo mais rápido: é um recurso avançado.
+6. **Execute uma tarefa por vez:** implemente, verifique (rode os testes ou mostre o resultado), marque `- [x]` e só então passe para a próxima. Se algo da especificação se mostrar errado, pare e proponha a correção na especificação antes de continuar.
 
 ## Regras
 

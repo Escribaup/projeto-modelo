@@ -9,10 +9,10 @@ Um mod para o Claude Code que funciona como um guia de boas práticas sempre à 
   Se a tarefa crescer além do tamanho escolhido, o guia sugere subir de nível.
 - **Método dos 5 passos** (Explorar → Planejar → Implementar → Verificar → Salvar). O passo atual muda sozinho conforme o Claude lê, planeja, edita, testa ou faz commit, e também pode ser ajustado pelos botões.
 - **Próximo passo**: o que pedir ao Claude agora, de acordo com o tamanho da tarefa.
-- **Progresso da especificação**: quando existe `specs/<pasta>/tarefas.md`, o painel mostra quantas tarefas foram concluídas, qual é a próxima e se a especificação já foi aprovada. Com a especificação aprovada, sugere construir acompanhando ou com `/construir` (modo autônomo). Enquanto o `/construir` roda, o painel e a linha de status mostram "Construção autônoma".
-- **Checklist do projeto**: CLAUDE.md, `.env` protegido no `.gitignore` e repositório git.
-- **Dicas no momento certo**: a conversa ficou cheia (`/compact` ou `/clear`), muitas alterações sem teste ("me mostre que funciona"), a tarefa cresceu, o projeto não tem CLAUDE.md (`/init`). Cada dica some com o botão "Entendi".
-- **Proteção do `.env`**: o Guia vivo recusa qualquer tentativa do Claude de ler, alterar ou usar em comandos um arquivo `.env` (onde ficam senhas e chaves) e avisa no painel. Arquivos de modelo sem senha, como `.env.example`, continuam liberados.
+- **Progresso da especificação**: quando existe `specs/<pasta>/tarefas.md`, o painel mostra quantas tarefas foram concluídas, qual é a próxima e se a especificação já foi aprovada. Com a especificação aprovada, sugere construir acompanhando ou com `/construir` (modo autônomo). Enquanto o `/construir` roda, o painel e a linha de status mostram "Construção autônoma" (e lembram que `/construir` retoma uma rodada interrompida). Quando todas as tarefas terminam na branch `construcao/...`, sugere `/concluir-construcao`.
+- **Checklist do projeto**: CLAUDE.md, seção "Sobre este projeto" preenchida, `.env` protegido no `.gitignore` e repositório git.
+- **Dicas no momento certo**: a conversa ficou cheia (`/compact` ou `/clear`), muitas alterações sem teste ou conferência ("me mostre que funciona"), a tarefa cresceu, o projeto não tem CLAUDE.md (`/init`). Cada dica some com o botão "Entendi".
+- **Proteção de senhas e certificados**: o Guia vivo recusa tentativas do Claude de ler, alterar ou usar em comandos arquivos de segredo (`.env` e variações, certificados `.pfx`/`.p12`, chaves `.key`, `credentials*.json`, `service-account*.json`) e avisa no painel. Arquivos de modelo sem senha, como `.env.example`, continuam liberados, e comandos que só protegem o arquivo (como acrescentá-lo ao `.gitignore` ou citá-lo numa mensagem de commit) não são bloqueados. É uma camada que reduz bastante o risco, não uma garantia absoluta: use também as regras do `.gitignore` e do `.claude/settings.json`.
 
 ## Como usar
 

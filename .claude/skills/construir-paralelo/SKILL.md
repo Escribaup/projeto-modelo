@@ -1,6 +1,6 @@
 ---
 name: construir-paralelo
-description: Construção autônoma EM PARALELO de uma especificação aprovada - executa ao mesmo tempo (até 3) as tarefas marcadas [paralela] em specs/<pasta>/tarefas.md, cada uma numa cópia isolada do projeto (git worktree), com construtor e revisor por tarefa, e junta os resultados. Tarefas sem a marca rodam uma por vez. Separado do /construir (sequencial) para os dois modos serem testados de forma independente. Use quando a pessoa pedir /construir-paralelo.
+description: RECURSO AVANÇADO - construção autônoma em paralelo de uma especificação aprovada - executa ao mesmo tempo (até 3) as tarefas marcadas [paralela] em specs/<pasta>/tarefas.md, cada uma numa cópia isolada do projeto (git worktree), com construtor e revisor por tarefa, e junta os resultados. Tarefas sem a marca rodam uma por vez. Use só quando a pessoa pedir /construir-paralelo; no dia a dia, o caminho padrão é o /construir.
 argument-hint: "[pasta da especificação] [limite de tarefas, padrão 10]"
 ---
 
@@ -9,9 +9,11 @@ argument-hint: "[pasta da especificação] [limite de tarefas, padrão 10]"
 Você é o **orquestrador**. Funciona como o `/construir`, com uma diferença: tarefas **independentes**, marcadas `[paralela]` em `tarefas.md`, são feitas **ao mesmo tempo**, cada uma numa cópia isolada do projeto. Todo o resto (pré-condições, limites, paradas, proibições) é igual ao modo sequencial e vale aqui também.
 
 ## 1. Pré-condições
-Verifique as mesmas do `/construir`: a especificação escolhida está **aprovada** (`Situação: aprovada`, Prontidão `pronta`), há tarefas pendentes, o `git status` está limpo e você está numa **branch de construção**. Na branch principal, crie e mude para `construcao/<pasta>`.
+Verifique as mesmas do `/construir` (seção 1 dele): especificação **aprovada** (`Situação: aprovada`, Prontidão `pronta`), tarefas pendentes e verificáveis, `git status` limpo (exceto `tarefas.md` e o registro) e **branch de construção** (na principal, crie e mude para `construcao/<pasta>`).
 
-Confirme com a pessoa **uma única vez**: a especificação, a branch, as tarefas pendentes, quais grupos vão rodar em paralelo e o limite da rodada (padrão **10**). Avise que o paralelo consome o plano mais rápido. Depois siga sem pedir confirmações.
+**Retomar:** se o registro diz `em andamento`, uma rodada parou no meio. Além do que o `/construir` faz para retomar, rode `git worktree list`: cópias `../<projeto>-wt-Tn` que sobraram têm tarefas sem juntar. Para cada uma, veja se tem commit aprovado (então junte-a, seção 5) ou não (então remova a cópia e a branch dela e refaça a tarefa).
+
+Confirme com a pessoa **uma única vez**: a especificação, a branch, as tarefas pendentes, quais grupos vão rodar em paralelo e o limite da rodada (padrão **10**). Avise que o paralelo consome o limite de uso da assinatura mais rápido. Depois siga sem pedir confirmações.
 
 ## 2. Registro
 Use `specs/<pasta>/registro-construcao.md` como no `/construir`, com `Situação: em andamento` e `Modo: paralelo`. Registre também, para cada grupo, quais tarefas rodaram juntas.
@@ -30,7 +32,7 @@ Para cada tarefa `Tn` do grupo:
 2. **Construtores ao mesmo tempo:** chame o subagente `construtor` para **todas** as tarefas do grupo **na mesma mensagem**, para rodarem juntos. Diga a cada um, logo no início, que trabalhe **somente** na pasta `../<projeto>-wt-Tn` (caminhos absolutos), que é a sua cópia, e passe a tarefa, a pasta da especificação e a verificação esperada.
 3. **Revisores:** para cada construtor que terminar CONCLUÍDA, chame o subagente `revisor` **na pasta do worktree daquela tarefa**. Pode chamar os revisores juntos também.
 4. **Correções:** se reprovada, até 2 correções com o mesmo construtor e na mesma pasta. Depois, uma escalada sua (orquestrador). Ainda reprovada: a tarefa fica de fora e conta como parada (seção 6).
-5. **Commit no worktree:** em cada worktree aprovado, faça o commit da tarefa (`git -C ../<projeto>-wt-Tn add -A` e `git -C ../<projeto>-wt-Tn commit -m "<pasta> Tn: <resumo>"`).
+5. **Commit no worktree:** em cada worktree aprovado, faça o commit **só dos arquivos que o construtor listou** (`git -C ../<projeto>-wt-Tn add <arquivos>` e `git -C ../<projeto>-wt-Tn commit -m "<pasta> Tn: <resumo>"`). Nunca `add -A` ou `add .`.
 
 ## 5. Juntar o grupo
 De volta à pasta principal, na branch `construcao/<pasta>`:
@@ -51,6 +53,6 @@ As mesmas do `/construir`: todas concluídas; limite da rodada atingido (cada ta
 Nunca: `git push`, merge na branch principal, ler ou alterar `.env`, apagar ou desativar testes para passar, alterar a especificação ou as marcas `[paralela]` por conta própria.
 
 ## 7. Relatório final
-Como no `/construir` (resumo, o que foi feito com commits, por que parou, o que revisar, próximos passos). Acrescente:
+Como no `/construir` (seção 6 dele): atualize o registro, **faça o commit do registro** e responda com resumo, o que foi feito com commits, por que parou, o que revisar e próximos passos (`/construir-paralelo` de novo ou `/concluir-construcao`). Acrescente:
 - quais grupos rodaram em paralelo e quantos conflitos houve;
 - se alguma cópia (worktree) ficou para trás, onde está e por quê.

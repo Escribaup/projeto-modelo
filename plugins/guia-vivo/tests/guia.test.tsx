@@ -139,9 +139,9 @@ test('acesso ao .env é bloqueado, gera alerta, e "Entendi" dispensa a dica', as
   expect(leitura.deny).toContain('Bloqueado pelo Guia vivo')
 
   const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
-  expect(await ui.find({ type: 'Text', text: /\.env \(senhas e chaves\)/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /arquivo de senhas, chaves ou certificado/ })).toBeDefined()
   await ui.press({ key: 'ok-env-tocado' })
-  expect(await ui.find({ type: 'Text', text: /\.env \(senhas e chaves\)/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /arquivo de senhas, chaves ou certificado/ })).toBeUndefined()
   await ui.unmount()
 })
 
@@ -173,4 +173,63 @@ test('a guarda pega .env em comandos e caminhos, mas libera os modelos', async (
     const r = (await $.tool.call(chamada as never)) as { deny?: string }
     expect(r.deny).toBeUndefined()
   }
+})
+
+test('a guarda cobre certificados e chaves e não bloqueia as correções', async ($, on) => {
+  motor(on, BASICO)
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+
+  const bloqueados = [
+    { tool: 'Bash', command: 'openssl pkcs12 -in certificado.pfx -nokeys' },
+    { tool: 'Read', file_path: '/proj/certs/empresa.p12' },
+    { tool: 'Read', file_path: '/proj/credentials.json' },
+    { tool: 'Read', file_path: '/proj/service-account-drive.json' },
+    { tool: 'Bash', command: 'git add .env' },
+    { tool: 'Bash', command: 'cat <<EOF > .env\nSENHA=1\nEOF' },
+    { tool: 'Bash', command: 'git commit -m "x" && cat .env' },
+  ] as const
+  for (const chamada of bloqueados) {
+    const r = (await $.tool.call(chamada as never)) as { deny?: string }
+    expect(r.deny).toContain('Bloqueado pelo Guia vivo')
+  }
+
+  const liberados = [
+    { tool: 'Bash', command: 'git commit -m "protege .env no gitignore"' },
+    { tool: 'Bash', command: 'echo ".env" >> .gitignore' },
+    { tool: 'Bash', command: 'git rm --cached .env && git commit -m "tira .env do git"' },
+    { tool: 'Bash', command: 'git check-ignore -v .env' },
+    { tool: 'Read', file_path: '/proj/.env.local.example' },
+    { tool: 'Bash', command: "cat > notas.md <<'EOF'\nNunca commite o .env\nEOF" },
+  ] as const
+  for (const chamada of liberados) {
+    const r = (await $.tool.call(chamada as never)) as { deny?: string }
+    expect(r.deny).toBeUndefined()
+  }
+})
+
+test('construção terminada na branch construcao/ sugere /concluir-construcao', async ($, on) => {
+  motor(on, {
+    ...BASICO,
+    '/proj/.git/HEAD': 'ref: refs/heads/construcao/003-folha\n',
+    '/proj/specs/003-folha/tarefas.md': '- [x] T1\n- [x] T2\n',
+    '/proj/specs/003-folha/especificacao.md': '> Situação: aprovada\n',
+    '/proj/specs/003-folha/registro-construcao.md': 'Situação: concluída\n',
+  })
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(await ui.find({ type: 'Text', text: /Rode \/concluir-construcao/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('avisa quando a seção Sobre este projeto do CLAUDE.md está vazia', async ($, on) => {
+  motor(on, {
+    ...BASICO,
+    '/proj/CLAUDE.md': '# CLAUDE.md\n## Sobre este projeto\n- Objetivo:\n- Para quem:\n',
+  })
+  await $.session.start({ cwd: '/proj', surface: 'desktop', isInteractive: true })
+  const ui = await $.ui.mount({ ...PAINEL, surface: 'desktop' })
+  expect(
+    await ui.find({ type: 'Text', text: /seção "Sobre este projeto" do CLAUDE.md está vazia/ }),
+  ).toBeDefined()
+  await ui.unmount()
 })

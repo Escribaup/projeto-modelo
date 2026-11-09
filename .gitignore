@@ -4,6 +4,30 @@
 !.env.exemplo
 !.env.example
 
+# Certificados digitais (A1) e chaves de acesso
+*.pfx
+*.p12
+*.key
+*.pem
+credentials*.json
+service-account*.json
+id_rsa*
+id_ed25519*
+
+# Dados reais de clientes: nunca vão para o git
+# Guarde planilhas, extratos, notas e relatórios reais em dados-locais/
+dados-locais/
+*.xlsx
+*.xls
+*.xlsm
+*.ods
+*.csv
+*.ofx
+*.pdf
+# Exceção: dados FICTÍCIOS de teste e exemplos podem ir ao git
+!tests/**
+!exemplos/**
+
 # Configurações pessoais do Claude Code (as do projeto ficam em .claude/settings.json)
 .claude/settings.local.json
 
