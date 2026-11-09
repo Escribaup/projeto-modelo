@@ -37,10 +37,10 @@ Limite: <N> tarefas
 Repita até uma condição de parada:
 
 1. Pegue a **próxima tarefa pendente** (`- [ ]`) em `tarefas.md`.
-2. **Construtor.** Chame o subagente `construtor` com: o texto da tarefa, o caminho da pasta da especificação, os requisitos ligados (R1, R2...) e a verificação esperada. Peça a resposta no formato dele.
+2. **Construtor.** Chame o subagente `construtor` com: o texto da tarefa, o caminho **absoluto** do projeto e da pasta da especificação, os requisitos ligados (R1, R2...) e a verificação esperada. Se a tarefa usa algo feito antes, repasse os **riscos que os revisores apontaram** nas tarefas anteriores e que a afetam (por exemplo, "a função X não remove espaços: trate isso ao ler o arquivo"). Peça a resposta no formato dele.
 3. Se o construtor responder **BLOQUEADA**, vá para as condições de parada.
 4. **Revisor.** Chame o subagente `revisor` com a mesma tarefa e os critérios de aceite. Ele confere de forma independente.
-5. **APROVADA:** marque a tarefa como `- [x]` em `tarefas.md`, faça um commit (`git add -A` e `git commit -m "<pasta> T<n>: <resumo>"`) e registre a linha no registro.
+5. **APROVADA:** marque a tarefa como `- [x]` em `tarefas.md`, faça um commit (`git add -A` e `git commit -m "<pasta> T<n>: <resumo>"`) e **só depois** acrescente a linha no registro, com o hash desse commit (`git rev-parse --short HEAD`). A linha do registro entra no commit seguinte. **Nunca reescreva commits** (`--amend`, rebase): isso muda os hashes já anotados.
 6. **REPROVADA:** devolva os problemas apontados ao construtor e repita a revisão. **No máximo 2 correções.**
 7. **Ainda reprovada após 2 correções: escalada.** Você (orquestrador) analisa o problema e tenta resolver diretamente uma vez, depois pede nova revisão. Se continuar reprovada, pare.
 

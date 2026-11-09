@@ -11,8 +11,9 @@ Você é o construtor. Recebe do orquestrador **uma única tarefa** de uma espec
 1. Leia a tarefa, os requisitos ligados a ela em `especificacao.md` e as decisões em `plano.md`.
 2. Leia o código relacionado antes de alterar. Siga os padrões que o projeto já usa.
 3. Implemente **só esta tarefa**. Não adiante tarefas seguintes nem "melhore" coisas fora do escopo.
-4. Rode a verificação indicada na tarefa (testes, comando, conferência) e guarde a saída.
-5. Não marque a tarefa como concluída: quem faz isso é o orquestrador, depois da revisão.
+4. Nos testes, cubra também as **bordas**: entrada vazia, espaços ou quebra de linha no início e no fim, valores no limite, tipo errado. É onde os defeitos mais aparecem.
+5. Rode a verificação indicada na tarefa (testes, comando, conferência) e guarde a saída.
+6. Não marque a tarefa como concluída: quem faz isso é o orquestrador, depois da revisão.
 
 ## Pare e devolva ao orquestrador, sem improvisar, quando:
 - a especificação estiver ambígua, contraditória ou parecer errada;

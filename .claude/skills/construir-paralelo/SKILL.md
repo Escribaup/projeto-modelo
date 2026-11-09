@@ -38,8 +38,10 @@ De volta à pasta principal, na branch `construcao/<pasta>`:
    `git merge --no-ff construcao/<pasta>-Tn -m "<pasta>: junta Tn"`
 2. **Conflito:** cancele aquela junção (`git merge --abort`), não tente resolver sozinho. Refaça essa tarefa **no modo sequencial**, direto na branch de construção (construtor, depois revisor), e anote no registro que houve conflito.
 3. **Teste combinado:** depois de juntar o grupo, chame o `revisor` na pasta principal para rodar **todos** os testes sobre o resultado junto. Se falhar, pare: o problema está na combinação, e a pessoa precisa olhar.
-4. Marque `- [x]` nas tarefas do grupo em `tarefas.md` (na branch de construção), faça um commit com essa marcação e atualize o registro.
+4. Marque `- [x]` nas tarefas do grupo em `tarefas.md` (na branch de construção), anote no registro as tarefas do grupo com os hashes dos commits de cada uma (`git log --format=%h --grep=" Tn:" -1`) e faça um commit com isso. **Nunca reescreva commits** (`--amend`, rebase).
 5. **Limpe as cópias:** `git worktree remove ../<projeto>-wt-Tn` e `git branch -d construcao/<pasta>-Tn` para cada tarefa juntada. Não apague uma cópia com trabalho que não foi juntado: deixe e cite no relatório.
+
+**Tarefa sozinha (sem `[paralela]`):** faça como no `/construir`, direto na branch de construção. Se ela usa resultados do grupo anterior, repasse ao construtor os **riscos que os revisores apontaram** nas tarefas desse grupo.
 
 ## 6. Condições de parada
 As mesmas do `/construir`: todas concluídas; limite da rodada atingido (cada tarefa conta 1, rodando em paralelo ou não, e não comece um grupo que passaria do limite: reduza-o); tarefa reprovada após a escalada; construtor BLOQUEADO; especificação parece errada; falha repetida. Mais duas, próprias do paralelo:
