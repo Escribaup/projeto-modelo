@@ -64,7 +64,7 @@ Você faz isso uma vez para cada projeto novo.
 | **Grande** | Uma funcionalidade ou sistema novo, que vai levar várias conversas | O Claude conduz uma **especificação** com você e só constrói depois da sua aprovação (seção 3). | `/guia grande` |
 
 **Na dúvida, escolha Média.** Se a tarefa crescer, o Guia vivo avisa e sugere subir de nível.
-**No navegador ou no app do celular** (onde o Guia vivo não funciona), diga no começo da conversa: *"Esta tarefa é média"*.
+**Sem o Guia vivo** (por exemplo, numa sessão na nuvem sem a configuração da seção 4), diga no começo da conversa: *"Esta tarefa é média"*.
 
 **Verificar sem testes automáticos.** Em planilhas, relatórios e automações, "verificar" é conferir o resultado contra uma referência: totais batendo com uma planilha conhecida, a automação rodada em modo de teste com dados fictícios, um checklist conferido item a item. O Claude mostra a evidência.
 
@@ -149,7 +149,19 @@ claude plugin install guia-vivo --marketplace Escribaup/claude-plugins-idvl
 ```
 
 ### No navegador (claude.ai/code) e no app do celular
-Aqui o Guia vivo **não funciona**: essas sessões rodam na nuvem e não carregam plugins, então nem o painel nem os comandos `/guia` existem. Se você digitar `/plugin`, vai aparecer "/plugin isn't available in this environment": instale o Guia vivo pelo computador (terminal ou aplicativo). O resto do modelo funciona: o `CLAUDE.md`, os comandos `/especificar`, `/construir` e `/concluir-construcao`, e as proteções do `.gitignore` e do `settings.json`. Diga o tamanho da tarefa no começo da conversa (*"Esta tarefa é média"*).
+Essas sessões rodam na nuvem, num "ambiente" preparado do zero a cada sessão. Lá o comando `/plugin` não existe (aparece "/plugin isn't available in this environment"), mas dá para instalar o Guia vivo pelo **script de configuração do ambiente**, uma vez só:
+
+1. Numa sessão na nuvem, toque no nome do ambiente no topo da conversa (por exemplo, **Default**) e depois em **Edit**.
+2. Em **Setup script**, acrescente estas duas linhas no final:
+   ```
+   claude plugin marketplace add Escribaup/claude-plugins-idvl || true
+   claude plugin install guia-vivo@plugins-idvl || true
+   ```
+3. Salve. A partir da **próxima sessão** nesse ambiente, o Guia vivo já vem instalado.
+
+Se preferir, peça numa sessão na nuvem: *"Adicione o Guia vivo ao script de configuração deste ambiente"*. O Claude propõe a mudança e você aprova.
+
+Sem essa configuração, o resto do modelo funciona do mesmo jeito (o `CLAUDE.md`, os comandos `/especificar`, `/construir` e `/concluir-construcao`, e as proteções do `.gitignore` e do `settings.json`), só sem o painel. Nesse caso, diga o tamanho da tarefa no começo da conversa (*"Esta tarefa é média"*).
 
 ### Atualizar o Guia vivo
 Quando sair uma versão nova, rode no terminal, fora do Claude Code:
